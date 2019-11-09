@@ -1,6 +1,8 @@
 package com.wolfram.timetable.utils;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wolfram.timetable.database.entities.User;
 
 import java.util.Date;
@@ -23,10 +25,21 @@ public class Utils {
                 .signWith(SignatureAlgorithm.HS512, key)
                 .compact();
     }
+
     public static Integer getUserId(String token){
         token = token.substring(7);
         Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
         Integer id = (Integer) claims.get("id");
         return id;
+    }
+    public static String getJson(Object object){
+        ObjectMapper objectMapper = new ObjectMapper();
+        String s = "";
+        try {
+            s = objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return s;
     }
 }

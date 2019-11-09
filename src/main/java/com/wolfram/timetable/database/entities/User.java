@@ -11,6 +11,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer user_id;
 
+    public User(){
+
+    }
+
+    public User(Integer user_id) {
+        this.user_id = user_id;
+    }
+
     public Integer getId() {
         return user_id;
     }
