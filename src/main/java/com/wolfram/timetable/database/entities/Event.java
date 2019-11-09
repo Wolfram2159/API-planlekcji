@@ -1,6 +1,8 @@
 package com.wolfram.timetable.database.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -22,9 +24,18 @@ public class Event {
     private Date end_time;
     private String localization;
     private String day;
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public Event() {
 

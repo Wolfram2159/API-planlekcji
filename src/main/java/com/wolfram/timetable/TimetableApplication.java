@@ -1,6 +1,8 @@
 package com.wolfram.timetable;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wolfram.timetable.jwt.JwtFilter;
+import com.wolfram.timetable.utils.JsonCreator;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,5 +26,10 @@ public class TimetableApplication {
         filterRegistrationBean.setFilter(new JwtFilter());
         filterRegistrationBean.setUrlPatterns(Arrays.asList("/hello/*", "/subject/*","/event/*","/grade/*","/note/*"));
         return filterRegistrationBean;
+    }
+    @Bean
+    public JsonCreator creator(){
+        ObjectMapper objectMapper = new ObjectMapper();
+        return new JsonCreator(objectMapper);
     }
 }

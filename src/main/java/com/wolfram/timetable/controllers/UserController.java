@@ -2,7 +2,7 @@ package com.wolfram.timetable.controllers;
 
 import com.wolfram.timetable.database.entities.User;
 import com.wolfram.timetable.database.repositories.UserRepository;
-import com.wolfram.timetable.utils.Utils;
+import com.wolfram.timetable.utils.JWTUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,11 +17,10 @@ public class UserController {
     private UserRepository userRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<String> getWebToken(){
+    public ResponseEntity<String> getWebToken() {
         User u = new User();
         User savedUser = userRepository.save(u);
-        String token = Utils.getJWT(savedUser);
+        String token = JWTUtils.getJWT(savedUser);
         return new ResponseEntity<>(token, HttpStatus.CREATED);
     }
-
 }
