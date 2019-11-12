@@ -53,12 +53,6 @@ public class Event {
                 '}';
     }
 
-    /*public String getTimeString(){
-        String startTime = Utils.getTimeString(getStart_time());
-        String endTime = Utils.getTimeString(getEnd_time());
-        return startTime + " - " + endTime;
-    }*/
-
     public Integer getId() {
         return id;
     }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
@@ -31,7 +32,7 @@ public class SubjectController {
     @PostMapping(value = "/subject")
     public ResponseEntity<String> createSubject(@RequestHeader String authorization, @RequestBody Subject subject) {
         if (NullCheckerUtils.checkSubject(subject)) {
-            return new ResponseEntity<>("Subject without name", HttpStatus.UNPROCESSABLE_ENTITY);
+            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         Integer userId = JWTUtils.getUserId(authorization);
         subject.setUser(new User(userId));
@@ -54,9 +55,9 @@ public class SubjectController {
         if (id == null) {
             return new ResponseEntity<>("No subject id.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        List<Subject> eventsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
 
-        if (!checkIfListContainsEvent(eventsFromUser, id)) {
+        if (!checkIfListContainsEvent(subjectsFromUser, id)) {
             return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
         }
 
@@ -64,6 +65,23 @@ public class SubjectController {
         subjectToDelete.setId(id);
         subjectRepository.delete(subjectToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PutMapping(value = "/subject")
+    public ResponseEntity<String> updateSubject(@RequestHeader String authorization, @RequestBody Subject subject){
+        if (NullCheckerUtils.checkFullSubject(subject)) {
+            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        Integer userId = JWTUtils.getUserId(authorization);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        if (!checkIfListContainsEvent(subjectsFromUser, subject.getId())) {
+            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        }
+        User user = new User(userId);
+        subject.setUser(user);
+        Subject save = subjectRepository.save(subject);
+        String json = jsonCreator.createJsonForObject(save);
+        return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
     private boolean checkIfListContainsEvent(List<Subject> subjectsFromUser, Integer searchingSubjectId) {

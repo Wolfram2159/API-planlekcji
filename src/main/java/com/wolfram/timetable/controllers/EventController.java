@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -70,6 +71,23 @@ public class EventController {
         eventToDelete.setId(id);
         eventRepository.delete(eventToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PutMapping(value = "/event")
+    public ResponseEntity<String> updateEvent(@RequestHeader String authorization, @RequestBody Event event){
+        if (NullCheckerUtils.checkFullEvent(event)){
+            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        Integer userId = JWTUtils.getUserId(authorization);
+        List<Event> eventsFromUser = eventRepository.getEventsFromUser(userId);
+        if (!checkIfListContainsEvent(eventsFromUser, event.getId())){
+            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        }
+        User user = new User(userId);
+        event.setUser(user);
+        Event save = eventRepository.save(event);
+        String json = jsonCreator.createJsonForObject(save);
+        return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
     private boolean checkIfListContainsEvent(List<Event> eventsFromUser, Integer searchingEventId){
