@@ -19,10 +19,13 @@ public class NullCheckerUtils {
             return true;
         }
         event.setDay(event.getDay().toLowerCase());
-        return checkDay(event.getDay());
+        return checkDay(event);
     }
 
-    public static boolean checkDay(String day) {
+    public static boolean checkDay(Event event) {
+        String day = event.getDay();
+        day = day.toLowerCase();
+        event.setDay(day);
         switch (day) {
             case "monday":
             case "tuesday":
@@ -43,7 +46,7 @@ public class NullCheckerUtils {
     }
 
     public static boolean checkFullEvent(Event event) {
-        return (event.getId() == null || event.getDay() == null
+        return (event.getId() == null || event.getDay() == null || checkDay(event)
                 || checkFullSubject(event.getSubject()) || event.getLocalization() == null
                 || event.getStart_time() == null || event.getEnd_time() == null);
     }

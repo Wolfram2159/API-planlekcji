@@ -46,8 +46,9 @@ public class EventController {
     @GetMapping(value = "/event")
     public ResponseEntity<String> getEventsFromDay(@RequestHeader String authorization, @RequestParam(name = "day") String day){
         Integer userId = JWTUtils.getUserId(authorization);
-        day = day.toLowerCase();
-        if (NullCheckerUtils.checkDay(day)) {
+        Event event = new Event();
+        event.setDay(day);
+        if (NullCheckerUtils.checkDay(event)) {
             return new ResponseEntity<>("Wrong day, only accepted days are : monday, tuesday, wednesday, thursday, friday. Case sensitive have no matters.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         List<Event> eventsFromDay = eventRepository.getEventsFromDay(userId, day);
