@@ -5,7 +5,7 @@ import com.wolfram.timetable.database.entities.User;
 import com.wolfram.timetable.database.repositories.SubjectRepository;
 import com.wolfram.timetable.utils.JsonCreator;
 import com.wolfram.timetable.utils.JWTUtils;
-import com.wolfram.timetable.utils.NullCheckerUtils;
+import com.wolfram.timetable.utils.Responses;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,11 +31,12 @@ public class SubjectController {
 
     @PostMapping(value = "/subject")
     public ResponseEntity<String> createSubject(@RequestHeader String authorization, @RequestBody Subject subject) {
-        if (NullCheckerUtils.checkSubject(subject)) {
-            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
+        if (subject.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
         Integer userId = JWTUtils.getUserId(authorization);
         subject.setUser(new User(userId));
+        subject.setId(null);
         Subject savedSubject = subjectRepository.save(subject);
         String json = jsonCreator.createJsonForObject(savedSubject);
         return new ResponseEntity<>(json, HttpStatus.CREATED);
@@ -50,46 +51,42 @@ public class SubjectController {
     }
 
     @DeleteMapping(value = "/subject/{id}")
-    public ResponseEntity<String> deleteSubject(@RequestHeader String authorization, @PathVariable Integer id) {
+    public ResponseEntity<String> deleteSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);
-        if (id == null) {
-            return new ResponseEntity<>("No subject id.", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
-
-        if (!checkIfListContainsEvent(subjectsFromUser, id)) {
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        if (checkIfNotListContainsEvent(subjectsFromUser, subjectId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
 
         Subject subjectToDelete = new Subject();
-        subjectToDelete.setId(id);
+        subjectToDelete.setId(subjectId);
         subjectRepository.delete(subjectToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping(value = "/subject")
-    public ResponseEntity<String> updateSubject(@RequestHeader String authorization, @RequestBody Subject subject){
-        if (NullCheckerUtils.checkFullSubject(subject)) {
-            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
+    @PutMapping(value = "/subject/{id}")
+    public ResponseEntity<String> updateSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Subject subject) {
+        if (subject.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
-        if (!checkIfListContainsEvent(subjectsFromUser, subject.getId())) {
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        if (checkIfNotListContainsEvent(subjectsFromUser, subjectId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-        User user = new User(userId);
-        subject.setUser(user);
+        subject.setUser(new User(userId));
+        subject.setId(subjectId);
         Subject save = subjectRepository.save(subject);
         String json = jsonCreator.createJsonForObject(save);
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
-    private boolean checkIfListContainsEvent(List<Subject> subjectsFromUser, Integer searchingSubjectId) {
+    private boolean checkIfNotListContainsEvent(List<Subject> subjectsFromUser, Integer searchingSubjectId) {
         for (Subject event : subjectsFromUser) {
             if (Objects.equals(event.getId(), searchingSubjectId)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }

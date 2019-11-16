@@ -20,12 +20,17 @@ public class Subject {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
     public Subject() {
     }
 
     public Subject(Integer id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    public Subject(Integer id) {
+        this.id = id;
     }
 
     @Override
@@ -62,6 +67,10 @@ public class Subject {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public boolean checkIfNotHaveNecessaryFields(){
+        return (this.name == null);
     }
 }
 
