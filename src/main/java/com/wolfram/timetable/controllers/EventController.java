@@ -1,11 +1,13 @@
 package com.wolfram.timetable.controllers;
 
 import com.wolfram.timetable.database.entities.Event;
+import com.wolfram.timetable.database.entities.Subject;
 import com.wolfram.timetable.database.entities.User;
 import com.wolfram.timetable.database.repositories.EventRepository;
+import com.wolfram.timetable.database.repositories.SubjectRepository;
 import com.wolfram.timetable.utils.JWTUtils;
 import com.wolfram.timetable.utils.JsonCreator;
-import com.wolfram.timetable.utils.NullCheckerUtils;
+import com.wolfram.timetable.utils.Responses;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,28 +30,44 @@ public class EventController {
     @Autowired
     private EventRepository eventRepository;
     @Autowired
+    private SubjectRepository subjectRepository;
+    @Autowired
     private JsonCreator jsonCreator;
 
-
-    @PostMapping(value = "/event")
-    public ResponseEntity<String> createEvent(@RequestHeader String authorization, @RequestBody Event event){
-        Integer userId = JWTUtils.getUserId(authorization);
-        if (NullCheckerUtils.checkEvent(event)){
-            return new ResponseEntity<>("Event without necessary fields.", HttpStatus.UNPROCESSABLE_ENTITY);
+    @PostMapping(value = "/subject/{id}/event")
+    public ResponseEntity<String> createEvent(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Event event) {
+        if (event.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        Integer userId = JWTUtils.getUserId(authorization);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        if (checkIfNotListContainsSubjectId(subjectsFromUser, subjectId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        event.setSubject(new Subject(subjectId));
         event.setUser(new User(userId));
-        Event savedEvent = eventRepository.save(event);
-        String json = jsonCreator.createJsonForObject(savedEvent);
+        event.setId(null);
+        Event save = eventRepository.save(event);
+        String json = jsonCreator.createJsonForObject(save);
         return new ResponseEntity<>(json, HttpStatus.CREATED);
     }
 
+    private boolean checkIfNotListContainsSubjectId(List<Subject> subjectList, Integer subjectId) {
+        for (Subject subject : subjectList) {
+            if (subject.getId().equals(subjectId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @GetMapping(value = "/event")
-    public ResponseEntity<String> getEventsFromDay(@RequestHeader String authorization, @RequestParam(name = "day") String day){
+    public ResponseEntity<String> getEventsFromDay(@RequestHeader String authorization, @RequestParam(name = "day") String day) {
         Integer userId = JWTUtils.getUserId(authorization);
         Event event = new Event();
         event.setDay(day);
-        if (NullCheckerUtils.checkDay(event)) {
-            return new ResponseEntity<>("Wrong day, only accepted days are : monday, tuesday, wednesday, thursday, friday. Case sensitive have no matters.", HttpStatus.UNPROCESSABLE_ENTITY);
+        if (!event.checkDayFormatIsCorrect()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
         List<Event> eventsFromDay = eventRepository.getEventsFromDay(userId, day);
         String json = jsonCreator.createJsonForObject(eventsFromDay);
@@ -57,46 +75,41 @@ public class EventController {
     }
 
     @DeleteMapping(value = "/event/{id}")
-    public ResponseEntity<String> deleteEvent(@RequestHeader String authorization, @PathVariable Integer id){
+    public ResponseEntity<String> deleteEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId) {
         Integer userId = JWTUtils.getUserId(authorization);
-        if (id == null) {
-            return new ResponseEntity<>("No event id.", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
         List<Event> eventsFromUser = eventRepository.getEventsFromUser(userId);
-
-        if (!checkIfListContainsEvent(eventsFromUser, id)){
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        if (checkIfNotListContainsEvent(eventsFromUser, eventId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-
         Event eventToDelete = new Event();
-        eventToDelete.setId(id);
+        eventToDelete.setId(eventId);
         eventRepository.delete(eventToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping(value = "/event")
-    public ResponseEntity<String> updateEvent(@RequestHeader String authorization, @RequestBody Event event){
-        if (NullCheckerUtils.checkFullEvent(event)){
-            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
+    @PutMapping(value = "/event/{id}")
+    public ResponseEntity<String> updateEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId, @RequestBody Event event) {
+        if (event.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
         Integer userId = JWTUtils.getUserId(authorization);
         List<Event> eventsFromUser = eventRepository.getEventsFromUser(userId);
-        if (!checkIfListContainsEvent(eventsFromUser, event.getId())){
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        if (checkIfNotListContainsEvent(eventsFromUser, eventId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-        User user = new User(userId);
-        event.setUser(user);
+        event.setUser(new User(userId));
+        event.setId(eventId);
         Event save = eventRepository.save(event);
         String json = jsonCreator.createJsonForObject(save);
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
-    private boolean checkIfListContainsEvent(List<Event> eventsFromUser, Integer searchingEventId){
+    private boolean checkIfNotListContainsEvent(List<Event> eventsFromUser, Integer searchingEventId) {
         for (Event event : eventsFromUser) {
-            if (Objects.equals(event.getId(), searchingEventId)){
-                return true;
+            if (Objects.equals(event.getId(), searchingEventId)) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }

@@ -17,6 +17,7 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;
@@ -100,4 +101,21 @@ public class Event {
     public void setDay(String day) {
         this.day = day;
     }
+
+    public boolean checkIfNotHaveNecessaryFields() {
+        return (start_time == null || end_time == null || localization == null || day == null || !checkDayFormatIsCorrect());
+    }
+
+    public boolean checkDayFormatIsCorrect() {
+        switch (this.day) {
+            case "monday":
+            case "tuesday":
+            case "wednesday":
+            case "thursday":
+            case "friday":
+                return true;
+        }
+        return false;
+    }
+
 }
