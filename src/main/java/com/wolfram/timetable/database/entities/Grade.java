@@ -16,6 +16,7 @@ public class Grade {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;
@@ -67,5 +68,9 @@ public class Grade {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public boolean checkIfNotHaveNecessaryFields() {
+        return (this.date == null || this.description == null);
     }
 }

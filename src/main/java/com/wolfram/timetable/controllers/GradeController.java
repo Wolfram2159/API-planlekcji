@@ -1,11 +1,13 @@
 package com.wolfram.timetable.controllers;
 
 import com.wolfram.timetable.database.entities.Grade;
+import com.wolfram.timetable.database.entities.Subject;
 import com.wolfram.timetable.database.entities.User;
 import com.wolfram.timetable.database.repositories.GradeRepository;
+import com.wolfram.timetable.database.repositories.SubjectRepository;
 import com.wolfram.timetable.utils.JWTUtils;
 import com.wolfram.timetable.utils.JsonCreator;
-import com.wolfram.timetable.utils.NullCheckerUtils;
+import com.wolfram.timetable.utils.Responses;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,79 +24,96 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.constraints.Null;
-
 @Controller
 public class GradeController {
     @Autowired
     private GradeRepository gradeRepository;
     @Autowired
+    private SubjectRepository subjectRepository;
+    @Autowired
     private JsonCreator jsonCreator;
 
-    @PostMapping(value = "/grade")
-    public ResponseEntity<String> createGrade(@RequestHeader String authorization, @RequestBody Grade grade){
+    @PostMapping(value = "/subject/{id}/grade")
+    public ResponseEntity<String> createGrade(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Grade grade) {
         Integer userId = JWTUtils.getUserId(authorization);
-        if (NullCheckerUtils.checkGrade(grade)) {
-            return new ResponseEntity<>("Grade without necessary fields.", HttpStatus.UNPROCESSABLE_ENTITY);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        if (checkIfNotListContainsSubjectId(subjectsFromUser, subjectId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-        User user = new User(userId);
-        grade.setUser(user);
-        Grade savedGrade = gradeRepository.save(grade);
-        String json = jsonCreator.createJsonForObject(savedGrade);
+        if (grade.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        grade.setId(null);
+        grade.setSubject(new Subject(subjectId));
+        grade.setUser(new User(userId));
+        Grade save = gradeRepository.save(grade);
+        String json = jsonCreator.createJsonForObject(save);
         return new ResponseEntity<>(json, HttpStatus.CREATED);
     }
 
-    @GetMapping(value = "/grade/subject/{id}")
-    public ResponseEntity<String> getGradesFromSubject(@RequestHeader String authorization, @PathVariable Integer id){
-        Integer userId = JWTUtils.getUserId(authorization);
-        if (id == null){
-            return new ResponseEntity<>("No subject id.", HttpStatus.UNPROCESSABLE_ENTITY);
+    private boolean checkIfNotListContainsSubjectId(List<Subject> subjectList, Integer subjectId) {
+        for (Subject subject : subjectList) {
+            if (subject.getId().equals(subjectId)) {
+                return false;
+            }
         }
-        List<Grade> gradesFromUser = gradeRepository.getGradesFromSubject(userId, id);
+        return true;
+    }
+
+    @GetMapping(value = "/subject/{id}/grade")
+    public ResponseEntity<String> getGradesFromSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
+        Integer userId = JWTUtils.getUserId(authorization);
+        Subject subject = subjectRepository.getOne(subjectId);
+        if (!userId.equals(subject.getUser().getId())) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        List<Grade> gradesFromUser = gradeRepository.getGradesFromSubject(userId, subjectId);
         String json = jsonCreator.createJsonForObject(gradesFromUser);
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
     @DeleteMapping(value = "/grade/{id}")
-    public ResponseEntity<String> deleteGrade(@RequestHeader String authorization, @PathVariable Integer id){
+    public ResponseEntity<String> deleteGrade(@RequestHeader String authorization, @PathVariable("id") Integer gradeId) {
         Integer userId = JWTUtils.getUserId(authorization);
-        if (id == null){
-            return new ResponseEntity<>("No grade id.", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
         List<Grade> gradesFromUser = gradeRepository.getGradesFromUser(userId);
-
-        if (!checkIfListContainsEvent(gradesFromUser, userId)){
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        if (checkIfNotListContainsEvent(gradesFromUser, gradeId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
         Grade gradeToDelete = new Grade();
-        gradeToDelete.setId(id);
+        gradeToDelete.setId(gradeId);
         gradeRepository.delete(gradeToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping(value = "/grade")
-    public ResponseEntity<String> updateGrade(@RequestHeader String authorization, @RequestBody Grade grade){
-        if (NullCheckerUtils.checkFullGrade(grade)){
-            return new ResponseEntity<>("Invalid data", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+    @PutMapping(value = "/subject/{id}/grade/{gradeId}")
+    public ResponseEntity<String> updateGrade(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @PathVariable("gradeId") Integer gradeId, @RequestBody Grade grade) {
         Integer userId = JWTUtils.getUserId(authorization);
-        List<Grade> gradesFromUser = gradeRepository.getGradesFromUser(userId);
-        if (!checkIfListContainsEvent(gradesFromUser, grade.getId())){
-            return new ResponseEntity<>("You have no permissions for this record.", HttpStatus.FORBIDDEN);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        if (checkIfNotListContainsSubjectId(subjectsFromUser, subjectId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-        User user = new User(userId);
-        grade.setUser(user);
+        if (grade.checkIfNotHaveNecessaryFields()) {
+            return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        Grade gradeFromRepo = gradeRepository.getOne(gradeId);
+        Integer userIdFromRepo = gradeFromRepo.getUser().getId();
+        if (!userIdFromRepo.equals(userId)) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        grade.setUser(new User(userId));
+        grade.setSubject(new Subject(subjectId));
+        grade.setId(gradeId);
         Grade save = gradeRepository.save(grade);
         String json = jsonCreator.createJsonForObject(save);
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
-    private boolean checkIfListContainsEvent(List<Grade> gradesFromUser, Integer searchingGradeId){
+    private boolean checkIfNotListContainsEvent(List<Grade> gradesFromUser, Integer searchingGradeId) {
         for (Grade grade : gradesFromUser) {
-            if (Objects.equals(grade.getId(), searchingGradeId)){
-                return true;
+            if (Objects.equals(grade.getId(), searchingGradeId)) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }
