@@ -29,6 +29,8 @@ public class SubjectController {
     @Autowired
     private JsonCreator jsonCreator;
 
+
+
     @PostMapping(value = "/subject")
     public ResponseEntity<String> createSubject(@RequestHeader String authorization, @RequestBody Subject subject) {
         if (subject.checkIfNotHaveNecessaryFields()) {
