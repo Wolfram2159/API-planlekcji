@@ -52,6 +52,17 @@ public class SubjectController {
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
+    @GetMapping(value ="/subject/{id}")
+    public ResponseEntity<String> getSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
+        Integer userId = JWTUtils.getUserId(authorization);
+        Subject subject = subjectRepository.getSubject(subjectId);
+        if (!userId.equals(subject.getUser().getId())) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        String json = jsonCreator.createJsonForObject(subject);
+        return new ResponseEntity<>(json, HttpStatus.OK);
+    }
+
     @DeleteMapping(value = "/subject/{id}")
     public ResponseEntity<String> deleteSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);

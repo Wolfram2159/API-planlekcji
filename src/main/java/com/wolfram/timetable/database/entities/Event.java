@@ -3,6 +3,9 @@ package com.wolfram.timetable.database.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -17,12 +20,11 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;
-    private Date start_time;
-    private Date end_time;
+    private String start_time;
+    private String end_time;
     private String localization;
     private String day;
     @JsonIgnore
@@ -70,19 +72,19 @@ public class Event {
         this.subject = subject;
     }
 
-    public Date getStart_time() {
+    public String getStart_time() {
         return start_time;
     }
 
-    public void setStart_time(Date start_time) {
+    public void setStart_time(String start_time) {
         this.start_time = start_time;
     }
 
-    public Date getEnd_time() {
+    public String getEnd_time() {
         return end_time;
     }
 
-    public void setEnd_time(Date end_time) {
+    public void setEnd_time(String end_time) {
         this.end_time = end_time;
     }
 
@@ -103,10 +105,11 @@ public class Event {
     }
 
     public boolean checkIfNotHaveNecessaryFields() {
-        return (start_time == null || end_time == null || localization == null || day == null || !checkDayFormatIsCorrect());
+        return (start_time == null || end_time == null || localization == null || day == null || !checkDayFormatIsCorrect() || !isValidFormat(start_time) || !isValidFormat(end_time));
     }
 
     public boolean checkDayFormatIsCorrect() {
+        this.day = this.day.toLowerCase();
         switch (this.day) {
             case "monday":
             case "tuesday":
@@ -118,4 +121,18 @@ public class Event {
         return false;
     }
 
+    public static boolean isValidFormat(String value) {
+        Date date = null;
+        String format = "HH:mm";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(format);
+            date = sdf.parse(value);
+            if (!value.equals(sdf.format(date))) {
+                date = null;
+            }
+        } catch (ParseException ex) {
+            ex.printStackTrace();
+        }
+        return date != null;
+    }
 }

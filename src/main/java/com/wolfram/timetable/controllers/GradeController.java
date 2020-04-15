@@ -1,5 +1,6 @@
 package com.wolfram.timetable.controllers;
 
+import com.wolfram.timetable.custom.SubjectWithGrades;
 import com.wolfram.timetable.database.entities.Grade;
 import com.wolfram.timetable.database.entities.Subject;
 import com.wolfram.timetable.database.entities.User;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -62,6 +64,17 @@ public class GradeController {
         return true;
     }
 
+    @GetMapping(value = "/grade/{id}")
+    public ResponseEntity<String> getGrade(@RequestHeader String authorization, @PathVariable("id") Integer gradeId) {
+        Integer userId = JWTUtils.getUserId(authorization);
+        Grade grade = gradeRepository.getGrade(gradeId);
+        if (!userId.equals(grade.getUser().getId())) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        String json = jsonCreator.createJsonForObject(grade);
+        return new ResponseEntity<>(json, HttpStatus.OK);
+    }
+
     @GetMapping(value = "/subject/{id}/grade")
     public ResponseEntity<String> getGradesFromSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);
@@ -71,6 +84,20 @@ public class GradeController {
         }
         List<Grade> gradesFromUser = gradeRepository.getGradesFromSubject(userId, subjectId);
         String json = jsonCreator.createJsonForObject(gradesFromUser);
+        return new ResponseEntity<>(json, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/grade")
+    public ResponseEntity<String> getGradesWithSubjects(@RequestHeader String authorization) {
+        Integer userId = JWTUtils.getUserId(authorization);
+        List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
+        List<SubjectWithGrades> subjectsWithGrades = new ArrayList<>();
+        for (Subject subject : subjectsFromUser) {
+            List<Grade> gradesFromSubject = gradeRepository.getGradesFromSubject(userId, subject.getId());
+            SubjectWithGrades subjectWithGrades = new SubjectWithGrades(subject, gradesFromSubject);
+            subjectsWithGrades.add(subjectWithGrades);
+        }
+        String json = jsonCreator.createJsonForObject(subjectsWithGrades);
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 

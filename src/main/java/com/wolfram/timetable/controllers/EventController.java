@@ -76,6 +76,17 @@ public class EventController {
         return new ResponseEntity<>(json, HttpStatus.OK);
     }
 
+    @GetMapping(value = "/event/{id}")
+    public ResponseEntity<String> getEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId) {
+        Integer userId = JWTUtils.getUserId(authorization);
+        Event eventFromUser = eventRepository.getEvent(eventId);
+        if (!userId.equals(eventFromUser.getUser().getId())) {
+            return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
+        }
+        String json = jsonCreator.createJsonForObject(eventFromUser);
+        return new ResponseEntity<>(json, HttpStatus.OK);
+    }
+
     @DeleteMapping(value = "/event/{id}")
     public ResponseEntity<String> deleteEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId) {
         Integer userId = JWTUtils.getUserId(authorization);

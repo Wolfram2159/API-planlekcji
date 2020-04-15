@@ -2,6 +2,8 @@ package com.wolfram.timetable.database.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -16,12 +18,11 @@ public class Grade {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;
     private String description;
-    private Date date;
+    private String date;
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -54,11 +55,11 @@ public class Grade {
         this.description = description;
     }
 
-    public Date getDate() {
+    public String getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(String date) {
         this.date = date;
     }
 
@@ -71,6 +72,21 @@ public class Grade {
     }
 
     public boolean checkIfNotHaveNecessaryFields() {
-        return (this.date == null || this.description == null);
+        return (this.date == null || this.description == null || !isValidFormat(date));
+    }
+
+    public static boolean isValidFormat(String value) {
+        Date date = null;
+        String format = "dd-MM-yyyy";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(format);
+            date = sdf.parse(value);
+            if (!value.equals(sdf.format(date))) {
+                date = null;
+            }
+        } catch (ParseException ex) {
+            ex.printStackTrace();
+        }
+        return date != null;
     }
 }

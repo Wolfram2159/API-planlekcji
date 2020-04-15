@@ -41,7 +41,7 @@ public class AppTests {
         subjectController = mock(SubjectController.class);
     }
 
-    /*@Test
+    @Test
     public void shouldReturnUnprocessableEntityStatusOnPost(){
         //SubjectController subjectController = mock(SubjectController.class);
         Subject subject = new Subject((String) null);
@@ -60,7 +60,7 @@ public class AppTests {
         when(subjectController.createSubject(eq(""), any(Subject.class))).thenReturn(returnCreated());
         ResponseEntity<String> response = subjectController.createSubject("", new Subject(""));
         Assert.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
-    }*/
+    }
 
     private ResponseEntity<String> returnCreated(){
         return new ResponseEntity<>("", HttpStatus.CREATED);

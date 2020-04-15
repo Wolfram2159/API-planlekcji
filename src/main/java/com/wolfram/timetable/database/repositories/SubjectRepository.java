@@ -11,4 +11,7 @@ import java.util.List;
 public interface SubjectRepository extends JpaRepository<Subject, Integer> {
     @Query(value = "SELECT * FROM Subject s WHERE s.user_id = :userId", nativeQuery = true)
     List<Subject> getSubjectsFromUser(@Param("userId") Integer userId);
+
+    @Query(value = "SELECT * FROM Subject s WHERE s.id = :subjectId", nativeQuery = true)
+    Subject getSubject(@Param("subjectId") Integer subjectId);
 }
