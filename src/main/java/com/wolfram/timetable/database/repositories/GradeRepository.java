@@ -18,4 +18,7 @@ public interface GradeRepository extends JpaRepository<Grade, Integer> {
 
     @Query(value = "SELECT * FROM Grade g WHERE g.id = :gradeId", nativeQuery = true)
     Grade getGrade(@Param("gradeId") Integer gradeId);
+
+    @Query(value = "SELECT * FROM Grade g WHERE g.subject_id = :subjectId", nativeQuery = true)
+    List<Grade> getGradesFromSubject(@Param("subjectId") Integer subjectId);
 }

@@ -3,9 +3,9 @@ package com.wolfram.timetable.database.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
 import java.util.Date;
 
 import javax.persistence.Entity;

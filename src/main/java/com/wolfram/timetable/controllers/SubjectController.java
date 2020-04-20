@@ -1,7 +1,11 @@
 package com.wolfram.timetable.controllers;
 
+import com.wolfram.timetable.database.entities.Event;
+import com.wolfram.timetable.database.entities.Grade;
 import com.wolfram.timetable.database.entities.Subject;
 import com.wolfram.timetable.database.entities.User;
+import com.wolfram.timetable.database.repositories.EventRepository;
+import com.wolfram.timetable.database.repositories.GradeRepository;
 import com.wolfram.timetable.database.repositories.SubjectRepository;
 import com.wolfram.timetable.utils.JsonCreator;
 import com.wolfram.timetable.utils.JWTUtils;
@@ -26,10 +30,18 @@ import java.util.Objects;
 @Controller
 @CrossOrigin
 public class SubjectController {
+    private final SubjectRepository subjectRepository;
+    private final EventRepository eventRepository;
+    private final GradeRepository gradeRepository;
+    private final JsonCreator jsonCreator;
+
     @Autowired
-    private SubjectRepository subjectRepository;
-    @Autowired
-    private JsonCreator jsonCreator;
+    public SubjectController(SubjectRepository subjectRepository, EventRepository eventRepository, GradeRepository gradeRepository, JsonCreator jsonCreator) {
+        this.subjectRepository = subjectRepository;
+        this.eventRepository = eventRepository;
+        this.gradeRepository = gradeRepository;
+        this.jsonCreator = jsonCreator;
+    }
 
     @PostMapping(value = "/subject")
     public ResponseEntity<String> createSubject(@RequestHeader String authorization, @RequestBody Subject subject) {
@@ -70,11 +82,22 @@ public class SubjectController {
         if (checkIfNotListContainsEvent(subjectsFromUser, subjectId)) {
             return new ResponseEntity<>(Responses.FORBIDDEN, HttpStatus.FORBIDDEN);
         }
-
         Subject subjectToDelete = new Subject();
         subjectToDelete.setId(subjectId);
+        deleteOnCascade(subjectId);
         subjectRepository.delete(subjectToDelete);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    private void deleteOnCascade(Integer subjectId) {
+        List<Event> eventsFromSubject = eventRepository.getEventsFromSubject(subjectId);
+        for (Event event : eventsFromSubject) {
+            eventRepository.delete(event);
+        }
+        List<Grade> gradesFromSubject = gradeRepository.getGradesFromSubject(subjectId);
+        for (Grade grade : gradesFromSubject) {
+            gradeRepository.delete(grade);
+        }
     }
 
     @PutMapping(value = "/subject/{id}")

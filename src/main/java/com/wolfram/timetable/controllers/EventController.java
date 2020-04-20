@@ -29,12 +29,16 @@ import java.util.Objects;
 @Controller
 @CrossOrigin
 public class EventController {
+    private final EventRepository eventRepository;
+    private final SubjectRepository subjectRepository;
+    private final JsonCreator jsonCreator;
+
     @Autowired
-    private EventRepository eventRepository;
-    @Autowired
-    private SubjectRepository subjectRepository;
-    @Autowired
-    private JsonCreator jsonCreator;
+    public EventController(JsonCreator jsonCreator, SubjectRepository subjectRepository, EventRepository eventRepository) {
+        this.jsonCreator = jsonCreator;
+        this.subjectRepository = subjectRepository;
+        this.eventRepository = eventRepository;
+    }
 
     @PostMapping(value = "/subject/{id}/event")
     public ResponseEntity<String> createEvent(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Event event) {

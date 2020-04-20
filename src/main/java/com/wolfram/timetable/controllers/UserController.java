@@ -15,8 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 @CrossOrigin
 public class UserController {
 
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<String> getWebToken() {

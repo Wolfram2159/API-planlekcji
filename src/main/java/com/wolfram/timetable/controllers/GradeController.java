@@ -30,12 +30,16 @@ import java.util.Objects;
 @Controller
 @CrossOrigin
 public class GradeController {
+    private final GradeRepository gradeRepository;
+    private final SubjectRepository subjectRepository;
+    private final JsonCreator jsonCreator;
+
     @Autowired
-    private GradeRepository gradeRepository;
-    @Autowired
-    private SubjectRepository subjectRepository;
-    @Autowired
-    private JsonCreator jsonCreator;
+    public GradeController(GradeRepository gradeRepository, SubjectRepository subjectRepository, JsonCreator jsonCreator) {
+        this.gradeRepository = gradeRepository;
+        this.subjectRepository = subjectRepository;
+        this.jsonCreator = jsonCreator;
+    }
 
     @PostMapping(value = "/subject/{id}/grade")
     public ResponseEntity<String> createGrade(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Grade grade) {
