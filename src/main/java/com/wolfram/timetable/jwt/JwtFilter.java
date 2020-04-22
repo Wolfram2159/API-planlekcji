@@ -21,7 +21,7 @@ public class JwtFilter implements Filter, WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**");
+        registry.addMapping("/**").allowedOrigins("http://localhost:3000");
     }
 
     @Override
@@ -29,9 +29,10 @@ public class JwtFilter implements Filter, WebMvcConfigurer {
         HttpServletResponse response = (HttpServletResponse) res;
         HttpServletRequest request = (HttpServletRequest) req;
         System.out.println("WebConfig; " + request.getRequestURI());
-        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
         response.setHeader("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS, DELETE");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With,observe");
+        response.setHeader("Vary", "Origin");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With,observe, Origin, Accept, X-CSRF-TOKEN");
         response.setHeader("Access-Control-Max-Age", "3600");
         response.setHeader("Access-Control-Allow-Credentials", "true");
         response.setHeader("Access-Control-Expose-Headers", "Authorization");
@@ -40,9 +41,10 @@ public class JwtFilter implements Filter, WebMvcConfigurer {
 
         System.out.println("Request Method: " + request.getMethod());
         if (!(request.getMethod().equalsIgnoreCase("OPTIONS"))) {
-            String header = request.getHeader("Authorization");
-            if (header == null || !header.startsWith("Bearer ")) {
+            String header = request.getHeader("Cookie");
+            if (header == null || !header.startsWith("jwt=")) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
             try {
                 chain.doFilter(req, res);
@@ -53,12 +55,23 @@ public class JwtFilter implements Filter, WebMvcConfigurer {
             }
         } else {
             System.out.println("Pre-flight");
-            response.setHeader("Access-Control-Allow-Origin", "*");
-            response.setHeader("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT");
+            response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+            response.setHeader("Vary", "Origin");
+
+            // Access-Control-Max-Age
             response.setHeader("Access-Control-Max-Age", "3600");
-            response.setHeader("Access-Control-Allow-Headers", "Access-Control-Expose-Headers," + "Authorization, content-type," +
-                    "USERID," + "ROLE," +
-                    "access-control-request-headers,access-control-request-method,accept,origin,Authorization,x-requested-with,responseType,observe");
+
+            // Access-Control-Allow-Credentials
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+
+            // Access-Control-Allow-Methods
+            response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+
+            // Access-Control-Allow-Headers
+            response.setHeader("Access-Control-Allow-Headers",
+                    "Access-Control-Expose-Headers," + "Authorization, content-type," +
+                            "USERID," + "ROLE," +
+                            "access-control-request-headers,access-control-request-method,accept,origin,Authorization,x-requested-with,responseType,observe" + "X-CSRF-TOKEN");
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }

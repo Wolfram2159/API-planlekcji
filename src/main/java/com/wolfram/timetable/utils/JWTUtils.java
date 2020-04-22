@@ -10,11 +10,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 public class JWTUtils {
-    private JWTUtils(){}
+    private JWTUtils() {
+    }
 
     private final static String key = "mySecretKey";
 
-    public static String getJWT(User user){
+    public static String getJWT(User user) {
         long timeNow = System.currentTimeMillis();
         return Jwts.builder()
                 .claim("id", user.getId())
@@ -23,8 +24,7 @@ public class JWTUtils {
                 .compact();
     }
 
-    public static Integer getUserId(String token){
-        token = token.substring(7);
+    public static Integer getUserId(String token) {
         Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
         Integer id = (Integer) claims.get("id");
         return id;

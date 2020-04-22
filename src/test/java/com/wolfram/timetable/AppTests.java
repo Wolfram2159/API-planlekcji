@@ -27,8 +27,8 @@ public class AppTests {
     @Test
     public void getJWT() {
         UserController userController = mock(UserController.class);
-        when(userController.getWebToken()).thenReturn(getToken());
-        ResponseEntity<String> webToken = userController.getWebToken();
+        when(userController.getWebToken(any(), any())).thenReturn(getToken());
+        ResponseEntity<String> webToken = userController.getWebToken(any(), any());
         Assert.assertEquals(webToken.getStatusCode(), HttpStatus.CREATED);
     }
 

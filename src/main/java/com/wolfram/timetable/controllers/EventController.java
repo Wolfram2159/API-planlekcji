@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +21,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Objects;
 
 @Controller
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class EventController {
     private final EventRepository eventRepository;
     private final SubjectRepository subjectRepository;
@@ -41,7 +41,7 @@ public class EventController {
     }
 
     @PostMapping(value = "/subject/{id}/event")
-    public ResponseEntity<String> createEvent(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Event event) {
+    public ResponseEntity<String> createEvent(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId, @RequestBody Event event) {
         if (event.checkIfNotHaveNecessaryFields()) {
             return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -68,7 +68,7 @@ public class EventController {
     }
 
     @GetMapping(value = "/event")
-    public ResponseEntity<String> getEventsFromDay(@RequestHeader String authorization, @RequestParam(name = "day") String day) {
+    public ResponseEntity<String> getEventsFromDay(@CookieValue("jwt") String authorization, @RequestParam(name = "day") String day) {
         Integer userId = JWTUtils.getUserId(authorization);
         Event event = new Event();
         event.setDay(day);
@@ -81,7 +81,7 @@ public class EventController {
     }
 
     @GetMapping(value = "/event/{id}")
-    public ResponseEntity<String> getEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId) {
+    public ResponseEntity<String> getEvent(@CookieValue("jwt") String authorization, @PathVariable("id") Integer eventId) {
         Integer userId = JWTUtils.getUserId(authorization);
         Event eventFromUser = eventRepository.getEvent(eventId);
         if (!userId.equals(eventFromUser.getUser().getId())) {
@@ -92,7 +92,7 @@ public class EventController {
     }
 
     @DeleteMapping(value = "/event/{id}")
-    public ResponseEntity<String> deleteEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId) {
+    public ResponseEntity<String> deleteEvent(@CookieValue("jwt") String authorization, @PathVariable("id") Integer eventId) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Event> eventsFromUser = eventRepository.getEventsFromUser(userId);
         if (checkIfNotListContainsEvent(eventsFromUser, eventId)) {
@@ -105,7 +105,7 @@ public class EventController {
     }
 
     @PutMapping(value = "/event/{id}")
-    public ResponseEntity<String> updateEvent(@RequestHeader String authorization, @PathVariable("id") Integer eventId, @RequestBody Event event) {
+    public ResponseEntity<String> updateEvent(@CookieValue("jwt") String authorization, @PathVariable("id") Integer eventId, @RequestBody Event event) {
         if (event.checkIfNotHaveNecessaryFields()) {
             return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }

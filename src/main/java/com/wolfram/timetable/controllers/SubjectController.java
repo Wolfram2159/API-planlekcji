@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,13 +23,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 import java.util.Objects;
 
 @Controller
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class SubjectController {
     private final SubjectRepository subjectRepository;
     private final EventRepository eventRepository;
@@ -44,7 +44,7 @@ public class SubjectController {
     }
 
     @PostMapping(value = "/subject")
-    public ResponseEntity<String> createSubject(@RequestHeader String authorization, @RequestBody Subject subject) {
+    public ResponseEntity<String> createSubject(@CookieValue("jwt") String authorization, @RequestBody Subject subject) {
         if (subject.checkIfNotHaveNecessaryFields()) {
             return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -57,7 +57,7 @@ public class SubjectController {
     }
 
     @GetMapping(value = "/subject")
-    public ResponseEntity<String> getSubjects(@RequestHeader String authorization) {
+    public ResponseEntity<String> getSubjects(@CookieValue("jwt") String authorization) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjects = subjectRepository.getSubjectsFromUser(userId);
         String json = jsonCreator.createJsonForObject(subjects);
@@ -65,7 +65,7 @@ public class SubjectController {
     }
 
     @GetMapping(value ="/subject/{id}")
-    public ResponseEntity<String> getSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
+    public ResponseEntity<String> getSubject(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);
         Subject subject = subjectRepository.getSubject(subjectId);
         if (!userId.equals(subject.getUser().getId())) {
@@ -76,7 +76,7 @@ public class SubjectController {
     }
 
     @DeleteMapping(value = "/subject/{id}")
-    public ResponseEntity<String> deleteSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
+    public ResponseEntity<String> deleteSubject(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
         if (checkIfNotListContainsEvent(subjectsFromUser, subjectId)) {
@@ -101,7 +101,7 @@ public class SubjectController {
     }
 
     @PutMapping(value = "/subject/{id}")
-    public ResponseEntity<String> updateSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Subject subject) {
+    public ResponseEntity<String> updateSubject(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId, @RequestBody Subject subject) {
         if (subject.checkIfNotHaveNecessaryFields()) {
             return new ResponseEntity<>(Responses.UNPROCESSABLE_ENTITY, HttpStatus.UNPROCESSABLE_ENTITY);
         }

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,14 +22,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Controller
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class GradeController {
     private final GradeRepository gradeRepository;
     private final SubjectRepository subjectRepository;
@@ -42,7 +42,7 @@ public class GradeController {
     }
 
     @PostMapping(value = "/subject/{id}/grade")
-    public ResponseEntity<String> createGrade(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @RequestBody Grade grade) {
+    public ResponseEntity<String> createGrade(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId, @RequestBody Grade grade) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
         if (checkIfNotListContainsSubjectId(subjectsFromUser, subjectId)) {
@@ -69,7 +69,7 @@ public class GradeController {
     }
 
     @GetMapping(value = "/grade/{id}")
-    public ResponseEntity<String> getGrade(@RequestHeader String authorization, @PathVariable("id") Integer gradeId) {
+    public ResponseEntity<String> getGrade(@CookieValue("jwt") String authorization, @PathVariable("id") Integer gradeId) {
         Integer userId = JWTUtils.getUserId(authorization);
         Grade grade = gradeRepository.getGrade(gradeId);
         if (!userId.equals(grade.getUser().getId())) {
@@ -80,7 +80,7 @@ public class GradeController {
     }
 
     @GetMapping(value = "/subject/{id}/grade")
-    public ResponseEntity<String> getGradesFromSubject(@RequestHeader String authorization, @PathVariable("id") Integer subjectId) {
+    public ResponseEntity<String> getGradesFromSubject(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId) {
         Integer userId = JWTUtils.getUserId(authorization);
         Subject subject = subjectRepository.getOne(subjectId);
         if (!userId.equals(subject.getUser().getId())) {
@@ -92,7 +92,7 @@ public class GradeController {
     }
 
     @GetMapping(value = "/grade")
-    public ResponseEntity<String> getGradesWithSubjects(@RequestHeader String authorization) {
+    public ResponseEntity<String> getGradesWithSubjects(@CookieValue("jwt") String authorization) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
         List<SubjectWithGrades> subjectsWithGrades = new ArrayList<>();
@@ -106,7 +106,7 @@ public class GradeController {
     }
 
     @DeleteMapping(value = "/grade/{id}")
-    public ResponseEntity<String> deleteGrade(@RequestHeader String authorization, @PathVariable("id") Integer gradeId) {
+    public ResponseEntity<String> deleteGrade(@CookieValue("jwt") String authorization, @PathVariable("id") Integer gradeId) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Grade> gradesFromUser = gradeRepository.getGradesFromUser(userId);
         if (checkIfNotListContainsEvent(gradesFromUser, gradeId)) {
@@ -119,7 +119,7 @@ public class GradeController {
     }
 
     @PutMapping(value = "/subject/{id}/grade/{gradeId}")
-    public ResponseEntity<String> updateGrade(@RequestHeader String authorization, @PathVariable("id") Integer subjectId, @PathVariable("gradeId") Integer gradeId, @RequestBody Grade grade) {
+    public ResponseEntity<String> updateGrade(@CookieValue("jwt") String authorization, @PathVariable("id") Integer subjectId, @PathVariable("gradeId") Integer gradeId, @RequestBody Grade grade) {
         Integer userId = JWTUtils.getUserId(authorization);
         List<Subject> subjectsFromUser = subjectRepository.getSubjectsFromUser(userId);
         if (checkIfNotListContainsSubjectId(subjectsFromUser, subjectId)) {
