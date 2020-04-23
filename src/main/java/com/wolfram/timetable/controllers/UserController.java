@@ -3,12 +3,12 @@ package com.wolfram.timetable.controllers;
 import com.wolfram.timetable.database.entities.User;
 import com.wolfram.timetable.database.repositories.UserRepository;
 import com.wolfram.timetable.utils.JWTUtils;
-import com.wolfram.timetable.utils.Responses;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +17,8 @@ import java.util.List;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+
+import io.jsonwebtoken.MalformedJwtException;
 
 @Controller
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
@@ -63,5 +65,26 @@ public class UserController {
             if (user.getUsername().equals(newUser.getUsername())) return true;
         }
         return false;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logoutUser(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt", "");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(1);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PostMapping("/authorized")
+    public ResponseEntity<String> isAuthorized(@CookieValue(value = "jwt", required = false) String jwt) {
+        if (jwt == null) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        try {
+            JWTUtils.getUserId(jwt);
+        } catch (MalformedJwtException e) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
